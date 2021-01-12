@@ -9,28 +9,36 @@ import (
 )
 
 func TestGetProfile(t *testing.T) {
-	joined := time.Unix(1245860880, 0)
+	loc := time.FixedZone("UTC", 0)
+	joined := time.Date(2007, 02, 20, 14, 35, 54, 0, loc)
 	sample := Profile{
-		Avatar:    "https://pbs.twimg.com/profile_images/1176439369596624896/Fkqe6qVj_400x400.jpg",
-		Biography: "Kenneth Reitz, n: a garden–variety self–referential loop. Not available for purchase. Made in USA.",
-		Birthday:  "1988",
-		Joined:    &joined,
-		Location:  "Eden, Earth, Milky Way",
-		Name:      "☿ Kenneth Reitz",
-		URL:       "https://twitter.com/kennethreitz",
-		Username:  "kennethreitz",
-		Website:   "https://kennethreitz.org/values",
+		Avatar:    "https://pbs.twimg.com/profile_images/1308010958862905345/-SGZioPb_normal.jpg",
+		Banner:    "https://pbs.twimg.com/profile_banners/783214/1609475315",
+		Biography: "What's happening?!",
+		//	Birthday:   "March 21",
+		IsPrivate:      false,
+		IsVerified:     true,
+		Joined:         &joined,
+		Location:       "everywhere",
+		Name:           "Twitter",
+		PinnedTweetIDs: []string{},
+		URL:            "https://twitter.com/Twitter",
+		UserID:         "783214",
+		Username:       "Twitter",
+		Website:        "https://about.twitter.com/",
 	}
 
-	profile, err := GetProfile("kennethreitz")
+	profile, err := GetProfile("Twitter")
 	if err != nil {
 		t.Error(err)
 	}
 
-	var cmpOptions = cmp.Options{
+	cmpOptions := cmp.Options{
 		cmpopts.IgnoreFields(Profile{}, "FollowersCount"),
 		cmpopts.IgnoreFields(Profile{}, "FollowingCount"),
+		cmpopts.IgnoreFields(Profile{}, "FriendsCount"),
 		cmpopts.IgnoreFields(Profile{}, "LikesCount"),
+		cmpopts.IgnoreFields(Profile{}, "ListedCount"),
 		cmpopts.IgnoreFields(Profile{}, "TweetsCount"),
 	}
 	if diff := cmp.Diff(sample, profile, cmpOptions...); diff != "" {

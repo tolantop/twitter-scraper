@@ -2,67 +2,95 @@ package twitterscraper
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
-
-	"github.com/PuerkitoBio/goquery"
 )
 
-// Profile of twitter user
+// Profile of twitter user.
 type Profile struct {
 	Avatar         string
+	Banner         string
 	Biography      string
 	Birthday       string
 	FollowersCount int
 	FollowingCount int
+	FriendsCount   int
+	IsPrivate      bool
+	IsVerified     bool
 	Joined         *time.Time
 	LikesCount     int
+	ListedCount    int
 	Location       string
 	Name           string
+	PinnedTweetIDs []string
 	TweetsCount    int
 	URL            string
+	UserID         string
 	Username       string
 	Website        string
 }
 
-// GetProfile return parsed user profile
-func GetProfile(username string) (Profile, error) {
-	url := "https://twitter.com/" + username
-	doc, err := goquery.NewDocument(url)
+// GetProfile return parsed user profile.
+func (s *Scraper) GetProfile(username string) (Profile, error) {
+	userID, err := s.GetUserIDByScreenName(username)
 	if err != nil {
 		return Profile{}, err
 	}
 
-	// parse location, also check is username valid
-	location := strings.TrimSpace(doc.Find(".ProfileHeaderCard-locationText.u-dir").First().Text())
-	if location == "" {
+	req, err := s.newRequest("GET", "https://twitter.com/i/api/2/timeline/profile/"+userID+".json")
+	if err != nil {
+		return Profile{}, err
+	}
+
+	q := req.URL.Query()
+	q.Add("count", "20")
+	q.Add("userId", userID)
+	req.URL.RawQuery = q.Encode()
+
+	var timeline timeline
+	err = s.RequestAPI(req, &timeline)
+	if err != nil {
+		return Profile{}, err
+	}
+
+	user, found := timeline.GlobalObjects.Users[userID]
+	if !found {
 		return Profile{}, fmt.Errorf("either @%s does not exist or is private", username)
 	}
 
-	// parse join date text
-	joined, _ := time.Parse("3:4 PM - 2 Jan 2006", doc.Find(".ProfileHeaderCard-joinDateText.u-dir").First().AttrOr("title", ""))
+	profile := Profile{
+		Avatar:         user.ProfileImageURLHTTPS,
+		Banner:         user.ProfileBannerURL,
+		Biography:      user.Description,
+		FollowersCount: user.FollowersCount,
+		FollowingCount: user.FavouritesCount,
+		FriendsCount:   user.FriendsCount,
+		IsPrivate:      user.Protected,
+		IsVerified:     user.Verified,
+		LikesCount:     user.FavouritesCount,
+		ListedCount:    user.ListedCount,
+		Location:       user.Location,
+		Name:           user.Name,
+		PinnedTweetIDs: user.PinnedTweetIdsStr,
+		TweetsCount:    user.StatusesCount,
+		URL:            "https://twitter.com/" + user.ScreenName,
+		UserID:         user.IDStr,
+		Username:       user.ScreenName,
+	}
 
-	return Profile{
-		Avatar:         doc.Find(".ProfileAvatar-image").First().AttrOr("src", ""),
-		Biography:      doc.Find(".ProfileHeaderCard-bio.u-dir").First().Text(),
-		Birthday:       strings.ReplaceAll(strings.TrimSpace(doc.Find(".ProfileHeaderCard-birthdateText.u-dir").First().Text()), "Born ", ""),
-		FollowersCount: parseCount(doc.Find(".ProfileNav-item--followers > a > span.ProfileNav-value").First()),
-		FollowingCount: parseCount(doc.Find(".ProfileNav-item--following > a > span.ProfileNav-value").First()),
-		Joined:         &joined,
-		LikesCount:     parseCount(doc.Find(".ProfileNav-item--favorites > a > span.ProfileNav-value").First()),
-		Location:       location,
-		Name:           doc.Find(".ProfileHeaderCard-nameLink").First().Text(),
-		TweetsCount:    parseCount(doc.Find(".ProfileNav-item--tweets.is-active > a > span.ProfileNav-value").First()),
-		URL:            url,
-		Username:       doc.Find(".u-linkComplex-target").First().Text(),
-		Website:        strings.TrimSpace(doc.Find(".ProfileHeaderCard-urlText.u-dir > a").First().AttrOr("title", "")),
-	}, nil
+	tm, err := time.Parse(time.RubyDate, user.CreatedAt)
+	if err == nil {
+		tm = tm.UTC()
+		profile.Joined = &tm
+	}
+
+	if len(user.Entities.URL.Urls) > 0 {
+		profile.Website = user.Entities.URL.Urls[0].ExpandedURL
+	}
+
+	return profile, nil
 }
 
-func parseCount(sel *goquery.Selection) (i int) {
-	if str, exists := sel.Attr("data-count"); exists {
-		i, _ = strconv.Atoi(str)
-	}
-	return
+// GetProfile wrapper for default scraper
+func GetProfile(username string) (Profile, error) {
+	return defaultScraper.GetProfile(username)
 }
