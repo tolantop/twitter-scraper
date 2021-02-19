@@ -15,8 +15,12 @@ type user struct {
 	Data struct {
 		User struct {
 			RestID string `json:"rest_id"`
+			Legacy User   `json:"legacy"`
 		} `json:"user"`
 	} `json:"data"`
+	Errors []struct {
+		Message string `json:"message"`
+	} `json:"errors"`
 }
 
 // Global cache for user IDs
@@ -41,7 +45,8 @@ func (s *Scraper) RequestAPI(req *http.Request, target interface{}) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	// private profiles return forbidden, but also data
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusForbidden {
 		return fmt.Errorf("response status %s", resp.Status)
 	}
 
@@ -85,31 +90,4 @@ func (s *Scraper) GetGuestToken() error {
 	s.guestCreatedAt = time.Now()
 
 	return nil
-}
-
-// GetUserIDByScreenName from API
-func (s *Scraper) GetUserIDByScreenName(screenName string) (string, error) {
-	id, ok := cacheIDs.Load(screenName)
-	if ok {
-		return id.(string), nil
-	}
-
-	var jsn user
-	req, err := http.NewRequest("GET", "https://api.twitter.com/graphql/4S2ihIKfF3xhp-ENxvUAfQ/UserByScreenName?variables=%7B%22screen_name%22%3A%22"+screenName+"%22%2C%22withHighlightedLabel%22%3Atrue%7D", nil)
-	if err != nil {
-		return "", err
-	}
-
-	err = s.RequestAPI(req, &jsn)
-	if err != nil {
-		return "", err
-	}
-
-	if jsn.Data.User.RestID == "" {
-		return "", fmt.Errorf("rest_id not found")
-	}
-
-	cacheIDs.Store(screenName, jsn.Data.User.RestID)
-
-	return jsn.Data.User.RestID, nil
 }
