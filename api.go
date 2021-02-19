@@ -33,6 +33,7 @@ func (s *Scraper) RequestAPI(req *http.Request, target interface{}) error {
 
 	req.Header.Set("Authorization", "Bearer "+bearerToken)
 	req.Header.Set("X-Guest-Token", s.guestToken)
+	req.Header.Set("Content-Type", "text/html; charset=utf-8")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
