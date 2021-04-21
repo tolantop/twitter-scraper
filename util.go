@@ -129,6 +129,18 @@ func parseTimeline(timeline *timeline) ([]*Tweet, string) {
 		}
 		if tweet.RetweetedStatusIDStr != "" {
 			tw.IsRetweet = true
+			if retweet, ok := timeline.GlobalObjects.Tweets[tweet.RetweetedStatusIDStr]; ok {
+				tw.Retweet = Retweet{
+					ID:       tweet.RetweetedStatusIDStr,
+					UserID:   retweet.UserIDStr,
+					Username: timeline.GlobalObjects.Users[retweet.UserIDStr].ScreenName,
+				}
+				tm, err := time.Parse(time.RubyDate, retweet.CreatedAt)
+				if err == nil {
+					tw.Retweet.TimeParsed = tm
+					tw.Retweet.Timestamp = tm.Unix()
+				}
+			}
 		}
 
 		for _, pinned := range timeline.GlobalObjects.Users[tweet.UserIDStr].PinnedTweetIdsStr {
@@ -212,6 +224,9 @@ func parseTimeline(timeline *timeline) ([]*Tweet, string) {
 			if entry.Content.Operation.Cursor.CursorType == "Bottom" {
 				cursor = entry.Content.Operation.Cursor.Value
 			}
+		}
+		if instruction.ReplaceEntry.Entry.Content.Operation.Cursor.CursorType == "Bottom" {
+			cursor = instruction.ReplaceEntry.Entry.Content.Operation.Cursor.Value
 		}
 	}
 	if pinnedTweet != nil && len(orderedTweets) > 0 {

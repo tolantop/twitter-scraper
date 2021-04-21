@@ -10,6 +10,15 @@ type (
 		URL     string
 	}
 
+	// Retweet type
+	Retweet struct {
+		ID         string
+		TimeParsed time.Time
+		Timestamp  int64
+		UserID     string
+		Username   string
+	}
+
 	// Tweet type.
 	Tweet struct {
 		Hashtags     []string
@@ -24,6 +33,7 @@ type (
 		Photos       []string
 		Replies      int
 		Retweets     int
+		Retweet      Retweet
 		Text         string
 		TimeParsed   time.Time
 		Timestamp    int64
@@ -37,33 +47,6 @@ type (
 	Result struct {
 		Tweet
 		Error error
-	}
-
-	// User type.
-	User struct {
-		CreatedAt   string `json:"created_at"`
-		Description string `json:"description"`
-		Entities    struct {
-			URL struct {
-				Urls []struct {
-					ExpandedURL string `json:"expanded_url"`
-				} `json:"urls"`
-			} `json:"url"`
-		} `json:"entities"`
-		FavouritesCount      int      `json:"favourites_count"`
-		FollowersCount       int      `json:"followers_count"`
-		FriendsCount         int      `json:"friends_count"`
-		IDStr                string   `json:"id_str"`
-		ListedCount          int      `json:"listed_count"`
-		Name                 string   `json:"name"`
-		Location             string   `json:"location"`
-		PinnedTweetIdsStr    []string `json:"pinned_tweet_ids_str"`
-		ProfileBannerURL     string   `json:"profile_banner_url"`
-		ProfileImageURLHTTPS string   `json:"profile_image_url_https"`
-		Protected            bool     `json:"protected"`
-		ScreenName           string   `json:"screen_name"`
-		StatusesCount        int      `json:"statuses_count"`
-		Verified             bool     `json:"verified"`
 	}
 
 	// timeline JSON
@@ -186,6 +169,18 @@ type (
 						} `json:"content"`
 					} `json:"entry"`
 				} `json:"pinEntry,omitempty"`
+				ReplaceEntry struct {
+					Entry struct {
+						Content struct {
+							Operation struct {
+								Cursor struct {
+									Value      string `json:"value"`
+									CursorType string `json:"cursorType"`
+								} `json:"cursor"`
+							} `json:"operation"`
+						} `json:"content"`
+					} `json:"entry"`
+				} `json:"replaceEntry,omitempty"`
 			} `json:"instructions"`
 		} `json:"timeline"`
 	}

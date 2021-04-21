@@ -1,5 +1,7 @@
 # Twitter Scraper
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/n0madic/twitter-scraper.svg)](https://pkg.go.dev/github.com/n0madic/twitter-scraper)
+
 Twitter's API is annoying to work with, and has lots of limitations —
 luckily their frontend (JavaScript) has it's own API, which I reverse-engineered.
 No API rate limits. No tokens needed. No restrictions. Extremely fast.
@@ -37,6 +39,27 @@ func main() {
 ```
 
 It appears you can ask for up to 50 tweets (limit ~3200 tweets).
+
+### Get single tweet
+
+```golang
+package main
+
+import (
+    "fmt"
+
+    twitterscraper "github.com/n0madic/twitter-scraper"
+)
+
+func main() {
+    scraper := twitterscraper.New()
+    tweet, err := scraper.GetTweet("1328684389388185600")
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(tweet.Text)
+}
+```
 
 ### Search tweets by query standard operators
 

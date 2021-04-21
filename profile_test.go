@@ -1,6 +1,7 @@
 package twitterscraper
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -13,7 +14,7 @@ func TestGetProfile(t *testing.T) {
 	joined := time.Date(2007, 02, 20, 14, 35, 54, 0, loc)
 	sample := Profile{
 		Avatar:    "https://pbs.twimg.com/profile_images/1354479643882004483/Btnfm47p_normal.jpg",
-		Banner:    "https://pbs.twimg.com/profile_banners/783214/1611950530",
+		Banner:    "https://pbs.twimg.com/profile_banners/783214/1616686952",
 		Biography: "What's happening?!",
 		//	Birthday:   "March 21",
 		IsPrivate:      false,
@@ -120,12 +121,14 @@ func TestGetProfileErrorSuspended(t *testing.T) {
 }
 
 func TestGetProfileErrorNotFound(t *testing.T) {
-	_, err := GetProfile("sample3123131")
+	neUser := "sample3123131"
+	expectedError := fmt.Sprintf("User '%s' not found", neUser)
+	_, err := GetProfile(neUser)
 	if err == nil {
 		t.Error("Expected Error, got success")
 	} else {
-		if err.Error() != "Not found" {
-			t.Errorf("Expected error 'Not found', got '%s'", err)
+		if err.Error() != expectedError {
+			t.Errorf("Expected error '%s', got '%s'", expectedError, err)
 		}
 	}
 }
